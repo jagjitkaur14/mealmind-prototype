@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MealMind — Smart Weekly Meal Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0f1117;
+  --surface:#181c27;
+  --card:#1e2335;
+  --border:#2a3050;
+  --accent:#4ade80;
+  --accent2:#f97316;
+  --accent3:#60a5fa;
+  --rose:#fb7185;
+  --text:#e8eaf6;
+  --muted:#7b84a3;
+  --white:#ffffff;
+  --radius:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── APP SHELL ── */
+.app{display:flex;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:220px;min-width:220px;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:1.5rem 1rem;
+  position:fixed;top:0;left:0;height:100vh;z-index:50;
+}
+.logo{display:flex;align-items:center;gap:.6rem;margin-bottom:2.5rem;padding:0 .5rem;}
+.logo-icon{
+  width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent3));
+  border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+}
+.logo-text{font-family:'Lora',serif;font-size:1.15rem;font-weight:600;color:var(--white);}
+.logo-text span{color:var(--accent);}
+
+.nav-label{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:0 .75rem;margin-bottom:.5rem;}
+.nav-item{
+  display:flex;align-items:center;gap:.7rem;padding:.65rem .75rem;
+  border-radius:10px;cursor:pointer;transition:background .2s,color .2s;
+  font-size:.88rem;font-weight:500;color:var(--muted);margin-bottom:.2rem;
+  border:none;background:transparent;width:100%;text-align:left;
+}
+.nav-item:hover{background:var(--card);color:var(--text);}
+.nav-item.active{background:rgba(74,222,128,.12);color:var(--accent);}
+.nav-item .ni{font-size:1rem;width:20px;text-align:center;}
+
+.sidebar-footer{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);}
+.user-chip{display:flex;align-items:center;gap:.7rem;padding:.6rem .5rem;cursor:pointer;}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#f97316,#fb7185);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:white;}
+.user-info{flex:1;}
+.user-name{font-size:.82rem;font-weight:600;color:var(--text);}
+.user-role{font-size:.7rem;color:var(--muted);}
+
+/* ── MAIN ── */
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+.topbar{
+  position:sticky;top:0;z-index:40;background:rgba(15,17,23,.9);
+  backdrop-filter:blur(16px);border-bottom:1px solid var(--border);
+  padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-title{font-size:1.1rem;font-weight:600;}
+.topbar-title span{color:var(--muted);font-weight:400;font-size:.85rem;margin-left:.5rem;}
+.topbar-actions{display:flex;gap:.7rem;align-items:center;}
+.btn{
+  padding:.55rem 1.2rem;border-radius:10px;border:none;cursor:pointer;
+  font-family:'Sora',sans-serif;font-size:.82rem;font-weight:600;
+  transition:transform .15s,box-shadow .2s;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-accent{background:var(--accent);color:#0a1a0f;box-shadow:0 4px 16px rgba(74,222,128,.3);}
+.btn-accent:hover{box-shadow:0 6px 24px rgba(74,222,128,.45);}
+.btn-orange{background:var(--accent2);color:white;box-shadow:0 4px 16px rgba(249,115,22,.3);}
+.btn-orange:hover{box-shadow:0 6px 24px rgba(249,115,22,.45);}
+.btn-sm{padding:.38rem .85rem;font-size:.76rem;}
+
+/* ── PAGES ── */
+.page{display:none;padding:2rem;animation:fadeIn .3s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── DASHBOARD PAGE ── */
+.week-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+.week-nav{display:flex;align-items:center;gap:1rem;}
+.week-label{font-family:'Lora',serif;font-size:1.3rem;font-weight:600;}
+.arrow-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.arrow-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1rem;}
+.day-col{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;transition:border-color .2s;}
+.day-col:hover{border-color:var(--accent);}
+.day-head{
+  padding:.7rem .8rem;background:var(--surface);border-bottom:1px solid var(--border);
+  text-align:center;
+}
+.day-name{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.day-num{font-size:1.2rem;font-weight:700;color:var(--text);}
+.day-num.today{color:var(--accent);}
+.meal-slots{padding:.6rem;}
+.meal-slot{
+  background:var(--surface);border-radius:10px;padding:.6rem .7rem;
+  margin-bottom:.5rem;cursor:pointer;border:1px dashed var(--border);
+  transition:border-color .2s,transform .15s;font-size:.75rem;
+}
+.meal-slot:hover{border-color:var(--accent);transform:scale(1.02);}
+.meal-slot.filled{border-style:solid;border-color:transparent;}
+.meal-slot.filled.breakfast{background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.2);}
+.meal-slot.filled.lunch{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2);}
+.meal-slot.filled.dinner{background:rgba(96,165,250,.08);border-color:rgba(96,165,250,.2);}
+.slot-type{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.2rem;}
+.slot-name{font-size:.78rem;font-weight:600;line-height:1.3;}
+.slot-time{font-size:.65rem;color:var(--muted);margin-top:.2rem;}
+.slot-empty{color:var(--muted);font-size:.75rem;text-align:center;padding:.3rem 0;}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.stat-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem 1.4rem;}
+.stat-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;}
+.stat-val{font-size:1.8rem;font-weight:700;font-family:'Lora',serif;}
+.stat-sub{font-size:.72rem;color:var(--muted);margin-top:.2rem;}
+.stat-card.green .stat-val{color:var(--accent);}
+.stat-card.orange .stat-val{color:var(--accent2);}
+.stat-card.blue .stat-val{color:var(--accent3);}
+.stat-card.rose .stat-val{color:var(--rose);}
+
+/* ── MEAL CARD MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--card);border-radius:20px;border:1px solid var(--border);
+  width:min(520px,90vw);max-height:85vh;overflow-y:auto;
+  animation:modalIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.modal-thumb{
+  height:200px;background:linear-gradient(135deg,#1a2a1a,#0d1a1a);
+  display:flex;align-items:center;justify-content:center;font-size:5rem;
+  border-radius:20px 20px 0 0;position:relative;
+}
+.modal-badge{
+  position:absolute;top:1rem;right:1rem;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
+  border-radius:100px;padding:.35rem .8rem;
+  font-size:.72rem;font-weight:600;border:1px solid var(--border);
+}
+.modal-body{padding:1.5rem;}
+.modal-title{font-family:'Lora',serif;font-size:1.5rem;font-weight:600;margin-bottom:.5rem;}
+.modal-meta{display:flex;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.meta-chip{display:flex;align-items:center;gap:.4rem;font-size:.76rem;color:var(--muted);}
+.meta-chip span{font-size:.9rem;}
+.modal-section{margin-bottom:1.2rem;}
+.modal-section h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem;}
+.ingredient-list{display:flex;flex-wrap:wrap;gap:.4rem;}
+.ing-chip{background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:.25rem .7rem;font-size:.76rem;}
+.ing-chip.have{border-color:rgba(74,222,128,.3);color:var(--accent);}
+.ing-chip.need{border-color:rgba(251,113,133,.3);color:var(--rose);}
+.modal-actions{display:flex;gap:.7rem;margin-top:1.5rem;}
+
+/* ── PANTRY ── */
+.pantry-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.pantry-panel{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:1.5rem;}
+.panel-title{font-size:1rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.add-row{display:flex;gap:.5rem;margin-bottom:1rem;}
+.input{
+  flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:.6rem 1rem;color:var(--text);font-family:'Sora',sans-serif;font-size:.85rem;
+  outline:none;transition:border-color .2s;
+}
+.input:focus{border-color:var(--accent);}
+.pantry-items{display:flex;flex-direction:column;gap:.5rem;max-height:320px;overflow-y:auto;}
+.pantry-item{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);border-radius:10px;padding:.65rem 1rem;
+  border:1px solid var(--border);
+}
+.item-left{display:flex;align-items:center;gap:.7rem;font-size:.85rem;}
+.item-cat{font-size:.7rem;color:var(--muted);background:var(--bg);padding:.15rem .5rem;border-radius:6px;}
+.del-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:.2rem;transition:color .2s;}
+.del-btn:hover{color:var(--rose);}
+.empty-state{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem;border:1px dashed var(--border);border-radius:10px;}
+
+/* ── SHOPPING LIST ── */
+.shop-section{margin-bottom:1.5rem;}
+.shop-section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.7rem;padding-bottom:.4rem;border-bottom:1px solid var(--border);}
+.shop-item{display:flex;align-items:center;gap:.8rem;padding:.55rem .2rem;border-bottom:1px solid rgba(42,48,80,.5);}
+.shop-cb{
+  width:20px;height:20px;border-radius:6px;border:2px solid var(--border);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0;
+}
+.shop-cb.checked{background:var(--accent);border-color:var(--accent);}
+.shop-cb.checked::after{content:'✓';font-size:.7rem;color:#0a1a0f;font-weight:700;}
+.shop-name{font-size:.88rem;flex:1;}
+.shop-name.done{text-decoration:line-through;color:var(--muted);}
+.shop-qty{font-size:.75rem;color:var(--muted);}
+.shop-toolbar{display:flex;gap:.7rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;}
+.progress-bar{background:var(--surface);border-radius:100px;height:6px;margin-bottom:1.5rem;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:100px;transition:width .4s;}
+
+/* ── PREFERENCES ── */
+.pref-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.pref-section{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:1.5rem;}
+.pref-title{font-size:1rem;font-weight:600;margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem;}
+.toggle-group{display:flex;flex-direction:column;gap:.6rem;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;}
+.toggle-label{font-size:.88rem;}
+.toggle{
+  position:relative;width:42px;height:24px;cursor:pointer;
+}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-track{
+  position:absolute;inset:0;background:var(--border);border-radius:100px;
+  transition:background .2s;
+}
+.toggle input:checked + .toggle-track{background:var(--accent);}
+.toggle-thumb{
+  position:absolute;width:18px;height:18px;background:white;border-radius:50%;
+  top:3px;left:3px;transition:left .2s;
+}
+.toggle input:checked ~ .toggle-thumb{left:21px;}
+
+.time-slider{width:100%;accent-color:var(--accent);margin:.5rem 0;}
+.slider-labels{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);}
+.cuisine-grid{display:flex;flex-wrap:wrap;gap:.5rem;}
+.cuisine-btn{
+  padding:.4rem .9rem;border-radius:100px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-family:'Sora',sans-serif;
+  font-size:.78rem;cursor:pointer;transition:all .2s;
+}
+.cuisine-btn:hover,.cuisine-btn.active{background:rgba(74,222,128,.12);border-color:var(--accent);color:var(--accent);}
+.select-input{
+  width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:.6rem 1rem;color:var(--text);font-family:'Sora',sans-serif;font-size:.85rem;outline:none;
+}
+.pref-label{font-size:.78rem;color:var(--muted);margin-bottom:.5rem;}
+
+/* ── GENERATE PAGE ── */
+.gen-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:2rem;max-width:600px;margin:0 auto;text-align:center;}
+.gen-icon{font-size:4rem;margin-bottom:1rem;}
+.gen-title{font-family:'Lora',serif;font-size:1.8rem;margin-bottom:.7rem;}
+.gen-sub{color:var(--muted);font-size:.9rem;line-height:1.6;margin-bottom:2rem;}
+.gen-steps{display:flex;flex-direction:column;gap:.8rem;text-align:left;margin-bottom:2rem;}
+.gen-step{display:flex;align-items:center;gap:1rem;background:var(--surface);border-radius:12px;padding:1rem;}
+.step-num{width:32px;height:32px;border-radius:50%;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:var(--accent);flex-shrink:0;}
+.step-text{font-size:.88rem;}
+.step-text strong{color:var(--text);}
+.step-text span{color:var(--muted);font-size:.8rem;}
+
+/* ── SECTION HEADER ── */
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+.section-hd h2{font-family:'Lora',serif;font-size:1.4rem;font-weight:600;}
+
+/* ── NOTIFICATION TOAST ── */
+.toast{
+  position:fixed;bottom:2rem;right:2rem;z-index:999;
+  background:var(--card);border:1px solid var(--accent);border-radius:12px;
+  padding:1rem 1.4rem;display:flex;align-items:center;gap:.7rem;
+  font-size:.88rem;box-shadow:0 8px 32px rgba(0,0,0,.4);
+  transform:translateX(120%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+}
+.toast.show{transform:translateX(0);}
+.toast-icon{font-size:1.1rem;}
+
+/* RESPONSIVE */
+@media(max-width:1100px){.week-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:800px){
+  .sidebar{display:none;}
+  .main{margin-left:0;}
+  .week-grid{grid-template-columns:repeat(2,1fr);}
+  .stats-row,.pref-grid,.pantry-grid{grid-template-columns:1fr;}
+}
+
+/* ── PART DOCS ── */
+.doc-section{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:1.5rem;margin-bottom:1.5rem;}
+.doc-section h3{font-family:'Lora',serif;font-size:1.1rem;margin-bottom:.8rem;color:var(--accent);}
+.doc-section p{font-size:.88rem;color:var(--muted);line-height:1.7;margin-bottom:.6rem;}
+.doc-section ul{padding-left:1.2rem;}
+.doc-section ul li{font-size:.88rem;color:var(--muted);line-height:1.8;}
+.flow-diagram{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin:.8rem 0;}
+.flow-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.5rem .9rem;font-size:.78rem;font-weight:600;}
+.flow-arrow{color:var(--accent);font-size:1rem;}
+.tag-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem;}
+.tag-badge{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--accent);border-radius:100px;padding:.2rem .7rem;font-size:.72rem;}
+.tag-badge.orange{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.2);color:var(--accent2);}
+.tag-badge.blue{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.2);color:var(--accent3);}
+.tag-badge.rose{background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.2);color:var(--rose);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🥗</div>
+    <div class="logo-text">Meal<span>Mind</span></div>
+  </div>
+  <div class="nav-label">Plan</div>
+  <button class="nav-item active" onclick="goPage('dashboard')"><span class="ni">🏠</span> Dashboard</button>
+  <button class="nav-item" onclick="goPage('generate')"><span class="ni">✨</span> Generate Plan</button>
+  <div class="nav-label" style="margin-top:1rem">Manage</div>
+  <button class="nav-item" onclick="goPage('pantry')"><span class="ni">🥕</span> Pantry</button>
+  <button class="nav-item" onclick="goPage('shopping')"><span class="ni">🛒</span> Shopping List</button>
+  <button class="nav-item" onclick="goPage('preferences')"><span class="ni">⚙️</span> Preferences</button>
+  <div class="nav-label" style="margin-top:1rem">Assignment</div>
+  <button class="nav-item" onclick="goPage('docs')"><span class="ni">📋</span> Part 1–4 Docs</button>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar">JK</div>
+      <div class="user-info">
+        <div class="user-name">Jagjit Kaur</div>
+        <div class="user-role">Aspiring PM</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Dashboard <span>Feb 24 – Mar 2, 2026</span></div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="showToast('Plan exported! 📤')">Export</button>
+      <button class="btn btn-accent" onclick="goPage('generate')">✨ Generate Plan</button>
+    </div>
+  </div>
+
+  <!-- ──────────────────── DASHBOARD ──────────────────── -->
+  <div class="page active" id="page-dashboard">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card green"><div class="stat-label">Meals Planned</div><div class="stat-val">18</div><div class="stat-sub">out of 21 this week</div></div>
+      <div class="stat-card orange"><div class="stat-label">Avg Cook Time</div><div class="stat-val">24m</div><div class="stat-sub">within your 30min goal</div></div>
+      <div class="stat-card blue"><div class="stat-label">Pantry Match</div><div class="stat-val">78%</div><div class="stat-sub">ingredients already at home</div></div>
+      <div class="stat-card rose"><div class="stat-label">Shopping Items</div><div class="stat-val">12</div><div class="stat-sub">items needed this week</div></div>
+    </div>
+
+    <!-- Week Calendar -->
+    <div class="week-header">
+      <div class="week-nav">
+        <button class="arrow-btn" onclick="showToast('Previous week')">‹</button>
+        <div class="week-label">Feb 24 – Mar 2, 2026</div>
+        <button class="arrow-btn" onclick="showToast('Next week')">›</button>
+      </div>
+      <div style="display:flex;gap:.5rem;">
+        <button class="btn btn-ghost btn-sm" onclick="showToast('View changed')">Month</button>
+        <button class="btn btn-accent btn-sm">Week</button>
+      </div>
+    </div>
+
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- ──────────────────── GENERATE ──────────────────── -->
+  <div class="page" id="page-generate">
+    <div class="gen-card">
+      <div class="gen-icon">✨</div>
+      <h2 class="gen-title">Generate Your Week</h2>
+      <p class="gen-sub">MealMind will create a personalized 7-day meal plan using your pantry, preferences, and available cooking time.</p>
+      <div class="gen-steps">
+        <div class="gen-step"><div class="step-num">✓</div><div class="step-text"><strong>Preferences loaded</strong><br/><span>Vegetarian · 30 min max · Indian & Mediterranean</span></div></div>
+        <div class="gen-step"><div class="step-num">✓</div><div class="step-text"><strong>Pantry scanned</strong><br/><span>14 items available · 78% match rate expected</span></div></div>
+        <div class="gen-step"><div class="step-num">3</div><div class="step-text"><strong>Generate 21 meals</strong><br/><span>Breakfast, Lunch & Dinner for 7 days</span></div></div>
+        <div class="gen-step"><div class="step-num">4</div><div class="step-text"><strong>Review & swap</strong><br/><span>Click any meal to swap or customize</span></div></div>
+        <div class="gen-step"><div class="step-num">5</div><div class="step-text"><strong>Auto-create shopping list</strong><br/><span>Only items you don't have</span></div></div>
+      </div>
+      <button class="btn btn-accent" style="width:100%;padding:.9rem;font-size:1rem;" onclick="generatePlan()">🚀 Generate My Meal Plan</button>
+    </div>
+  </div>
+
+  <!-- ──────────────────── PANTRY ──────────────────── -->
+  <div class="page" id="page-pantry">
+    <div class="section-hd">
+      <h2>🥕 Pantry Manager</h2>
+      <button class="btn btn-ghost btn-sm" onclick="showToast('Pantry cleared! 🗑️')">Clear All</button>
+    </div>
+    <div class="pantry-grid">
+      <div class="pantry-panel">
+        <div class="panel-title">➕ Add Item</div>
+        <div class="add-row">
+          <input class="input" id="pantryInput" placeholder="e.g. Tomatoes..." onkeydown="if(event.key==='Enter')addPantryItem()"/>
+          <select class="input" id="pantryCat" style="max-width:110px;flex:none;">
+            <option value="🥬">🥬 Veggie</option>
+            <option value="🧀">🧀 Dairy</option>
+            <option value="🌾">🌾 Grain</option>
+            <option value="🫙">🫙 Pantry</option>
+            <option value="🥩">🥩 Protein</option>
+            <option value="🌶️">🌶️ Spice</option>
+          </select>
+          <button class="btn btn-accent btn-sm" onclick="addPantryItem()">Add</button>
+        </div>
+        <div class="pantry-items" id="pantryList"></div>
+      </div>
+      <div class="pantry-panel">
+        <div class="panel-title">📊 Pantry Stats</div>
+        <div class="stats-row" style="grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:0;">
+          <div class="stat-card" style="padding:1rem;"><div class="stat-label">Total Items</div><div class="stat-val" style="font-size:1.6rem;" id="totalItems">14</div></div>
+          <div class="stat-card green" style="padding:1rem;"><div class="stat-label">Recipe Match</div><div class="stat-val" style="font-size:1.6rem;">78%</div></div>
+        </div>
+        <div style="margin-top:1rem;">
+          <div class="pref-label">Stock levels</div>
+          <div style="display:flex;flex-direction:column;gap:.5rem;" id="stockBars"></div>
+        </div>
+        <div style="margin-top:1rem;background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.15);border-radius:12px;padding:1rem;">
+          <div style="font-size:.82rem;font-weight:600;margin-bottom:.4rem;color:var(--accent);">💡 Smart Suggestions</div>
+          <div style="font-size:.8rem;color:var(--muted);line-height:1.7;">Based on your pantry, try: <strong style="color:var(--text)">Dal Tadka, Vegetable Pulao, Greek Salad, Masala Omelette</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────────── SHOPPING ──────────────────── -->
+  <div class="page" id="page-shopping">
+    <div class="section-hd">
+      <h2>🛒 Shopping List</h2>
+      <div style="display:flex;gap:.5rem;">
+        <button class="btn btn-ghost btn-sm" onclick="checkAll()">Check All</button>
+        <button class="btn btn-orange btn-sm" onclick="exportList()">📤 Export</button>
+      </div>
+    </div>
+    <div class="shop-toolbar">
+      <span style="font-size:.85rem;color:var(--muted);" id="shopProgress">0 of 12 checked</span>
+      <div style="flex:1;"></div>
+      <button class="btn btn-ghost btn-sm" onclick="showToast('Sorted by category!')">Sort by Category</button>
+      <button class="btn btn-ghost btn-sm" onclick="showToast('Shared via link!')">Share</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="shopProgressBar" style="width:0%"></div></div>
+    <div id="shopList"></div>
+  </div>
+
+  <!-- ──────────────────── PREFERENCES ──────────────────── -->
+  <div class="page" id="page-preferences">
+    <div class="section-hd">
+      <h2>⚙️ My Preferences</h2>
+      <button class="btn btn-accent btn-sm" onclick="savePrefs()">💾 Save</button>
+    </div>
+    <div class="pref-grid">
+      <!-- Dietary -->
+      <div class="pref-section">
+        <div class="pref-title">🥗 Dietary Restrictions</div>
+        <div class="toggle-group">
+          <div class="toggle-row"><span class="toggle-label">Vegetarian</span><label class="toggle"><input type="checkbox" checked onchange="showToast('Preference updated!')"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="toggle-row"><span class="toggle-label">Vegan</span><label class="toggle"><input type="checkbox" onchange="showToast('Preference updated!')"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="toggle-row"><span class="toggle-label">Gluten-Free</span><label class="toggle"><input type="checkbox" onchange="showToast('Preference updated!')"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="toggle-row"><span class="toggle-label">Dairy-Free</span><label class="toggle"><input type="checkbox" onchange="showToast('Preference updated!')"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="toggle-row"><span class="toggle-label">Nut-Free</span><label class="toggle"><input type="checkbox" onchange="showToast('Preference updated!')"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+          <div class="toggle-row"><span class="toggle-label">Low-Carb</span><label class="toggle"><input type="checkbox" onchange="showToast('Preference updated!')"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+        </div>
+      </div>
+      <!-- Time -->
+      <div class="pref-section">
+        <div class="pref-title">⏱️ Cooking Time</div>
+        <div class="pref-label">Max time per meal</div>
+        <input type="range" class="time-slider" min="10" max="90" value="30" id="timeSlider" oninput="updateTimeLabel(this.value)"/>
+        <div class="slider-labels"><span>10 min</span><span id="timeVal">30 min</span><span>90 min</span></div>
+        <div style="margin-top:1.5rem;">
+          <div class="pref-label">Meals per day</div>
+          <select class="select-input" onchange="showToast('Updated!')">
+            <option>2 meals (Lunch + Dinner)</option>
+            <option selected>3 meals (Breakfast + Lunch + Dinner)</option>
+            <option>3 meals + 1 snack</option>
+          </select>
+        </div>
+        <div style="margin-top:1rem;">
+          <div class="pref-label">Cooking skill level</div>
+          <select class="select-input" onchange="showToast('Updated!')">
+            <option>Beginner</option>
+            <option selected>Intermediate</option>
+            <option>Advanced</option>
+          </select>
+        </div>
+        <div style="margin-top:1rem;">
+          <div class="pref-label">Servings per meal</div>
+          <select class="select-input" onchange="showToast('Updated!')">
+            <option>1 person</option>
+            <option selected>2 people</option>
+            <option>4 people (family)</option>
+          </select>
+        </div>
+      </div>
+      <!-- Cuisines -->
+      <div class="pref-section">
+        <div class="pref-title">🌍 Favourite Cuisines</div>
+        <div class="cuisine-grid" id="cuisineGrid"></div>
+      </div>
+      <!-- Allergies -->
+      <div class="pref-section">
+        <div class="pref-title">⚠️ Allergens & Dislikes</div>
+        <div class="pref-label">Allergens to avoid</div>
+        <div class="cuisine-grid" style="margin-bottom:1rem;" id="allergenGrid"></div>
+        <div class="pref-label">Disliked ingredients</div>
+        <div class="add-row">
+          <input class="input" id="dislikeInput" placeholder="e.g. Mushrooms..."/>
+          <button class="btn btn-ghost btn-sm" onclick="addDislike()">Add</button>
+        </div>
+        <div id="dislikeList" class="ingredient-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────────── DOCS (Part 1–4) ──────────────────── -->
+  <div class="page" id="page-docs">
+    <div class="section-hd"><h2>📋 Assignment Documentation</h2></div>
+
+    <div class="doc-section">
+      <h3>Part 1: Target User & Problem Definition</h3>
+      <p><strong style="color:var(--text)">Primary Persona — "The Overwhelmed Professional"</strong></p>
+      <p>Meet <strong style="color:var(--text)">Priya, 29</strong> — a working professional in Hyderabad who cooks for 2. She gets home by 7pm, doesn't want to spend more than 30 minutes cooking, has dietary preferences (vegetarian), and hates wasting groceries she buys but forgets to use.</p>
+      <div class="tag-row"><span class="tag-badge">Age 25–40</span><span class="tag-badge">Working Professional</span><span class="tag-badge orange">Time-poor</span><span class="tag-badge blue">Health-conscious</span><span class="tag-badge rose">Budget-aware</span></div>
+      <p style="margin-top:1rem;"><strong style="color:var(--text)">Core Problems Identified:</strong></p>
+      <ul>
+        <li>Decision fatigue: "What should I cook?" happens daily and wastes mental energy</li>
+        <li>Pantry waste: 30% of groceries expire unused due to poor planning</li>
+        <li>Diet drift: Without a plan, users default to unhealthy, quick options</li>
+        <li>Shopping inefficiency: Buying items they already have; forgetting what's needed</li>
+        <li>One-size-fits-all: Existing tools don't respect time constraints or pantry stock</li>
+      </ul>
+      <p style="margin-top:.8rem;"><strong style="color:var(--text)">Problem Statement:</strong> Busy individuals need a smart meal planning tool that adapts to their available time, dietary needs, and pantry contents — so that they can eat well without spending hours planning or wasting food.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3>Part 2: Key User Flows</h3>
+      <p><strong style="color:var(--text)">Primary Flow — First-time Setup:</strong></p>
+      <div class="flow-diagram">
+        <div class="flow-box">Sign Up</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Set Preferences</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Add Pantry Items</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Generate Plan</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Review & Swap</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Shopping List</div>
+      </div>
+      <p style="margin-top:.8rem;"><strong style="color:var(--text)">Secondary Flow — Weekly Replanning:</strong></p>
+      <div class="flow-diagram">
+        <div class="flow-box">Open Dashboard</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Update Pantry</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Regenerate</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Adjust Swaps</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Export List</div>
+      </div>
+      <p style="margin-top:.8rem;"><strong style="color:var(--text)">Tertiary Flow — Mid-week Swap:</strong></p>
+      <div class="flow-diagram">
+        <div class="flow-box">Click Meal Card</div><div class="flow-arrow">→</div>
+        <div class="flow-box">View Alternatives</div><div class="flow-arrow">→</div>
+        <div class="flow-box">Swap Meal</div><div class="flow-arrow">→</div>
+        <div class="flow-box">List Auto-updates</div>
+      </div>
+      <p style="margin-top:.8rem;"><strong style="color:var(--text)">Key Decision Points:</strong></p>
+      <ul>
+        <li>If user has &lt;20 min → show only quick meals (pasta, salads, wraps)</li>
+        <li>If pantry &gt;70% match → prioritise those recipes to reduce shopping</li>
+        <li>If dietary restriction conflicts with recipe → auto-exclude and flag</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3>Part 3: Prototype — What Was Built</h3>
+      <p>This prototype replicates the Lovable-style interactive prototype across 6 screens:</p>
+      <ul>
+        <li><strong style="color:var(--accent)">Dashboard:</strong> 7-day calendar grid with Breakfast/Lunch/Dinner slots, stats bar, quick actions</li>
+        <li><strong style="color:var(--accent)">Generate Plan:</strong> Step-by-step plan builder with pantry + preferences context</li>
+        <li><strong style="color:var(--accent)">Pantry Manager:</strong> Add/remove pantry items by category; stock level visualization</li>
+        <li><strong style="color:var(--accent)">Shopping List:</strong> Auto-generated checklist by category; checkoff, export, share</li>
+        <li><strong style="color:var(--accent)">Preferences:</strong> Dietary toggles, time slider, cuisine selector, allergen manager</li>
+        <li><strong style="color:var(--accent)">Meal Cards:</strong> Click any meal to open detailed modal with ingredients, time, swap</li>
+      </ul>
+      <div class="tag-row">
+        <span class="tag-badge">HTML/CSS/JS</span>
+        <span class="tag-badge">No dependencies</span>
+        <span class="tag-badge orange">Fully Interactive</span>
+        <span class="tag-badge blue">Dark UI Theme</span>
+        <span class="tag-badge rose">Mobile Responsive</span>
+      </div>
+    </div>
+
+    <div class="doc-section">
+      <h3>Part 4: Test & Refine — Feedback Framework</h3>
+      <p><strong style="color:var(--text)">Usability Test Plan:</strong></p>
+      <ul>
+        <li>Task 1: "Set your dietary preference to vegetarian and max 30 min cook time"</li>
+        <li>Task 2: "Add 5 pantry items you have at home right now"</li>
+        <li>Task 3: "Generate a weekly meal plan and swap Tuesday dinner"</li>
+        <li>Task 4: "Export your shopping list"</li>
+      </ul>
+      <p style="margin-top:.8rem;"><strong style="color:var(--text)">Metrics to track:</strong></p>
+      <ul>
+        <li>Task completion rate (target: >85%)</li>
+        <li>Time-on-task for plan generation (&lt;2 minutes)</li>
+        <li>NPS/CSAT after first week of use</li>
+        <li>Pantry match % week over week</li>
+      </ul>
+      <p style="margin-top:.8rem;"><strong style="color:var(--text)">Iteration priorities (post-testing):</strong></p>
+      <ul>
+        <li>V1 → V2: Add meal rating; use ratings to improve future suggestions</li>
+        <li>V2 → V3: Calorie/nutrition tracking per day</li>
+        <li>V3 → V4: AI recipe suggestions from photo of pantry</li>
+        <li>Future: Social sharing, family multi-user, integration with grocery delivery apps</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MEAL CARD MODAL -->
+<div class="modal-overlay" id="mealModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-thumb" id="modalEmoji">🍛<div class="modal-badge" id="modalBadge">25 min</div></div>
+    <div class="modal-body">
+      <h2 class="modal-title" id="modalTitle">Meal Name</h2>
+      <div class="modal-meta">
+        <div class="meta-chip"><span>⏱️</span> <span id="modalTime">25 min</span></div>
+        <div class="meta-chip"><span>🍽️</span> 2 servings</div>
+        <div class="meta-chip"><span>🌿</span> Vegetarian</div>
+        <div class="meta-chip"><span>⚡</span> <span id="modalCal">380</span> cal</div>
+      </div>
+      <div class="modal-section">
+        <h4>Ingredients</h4>
+        <div class="ingredient-list" id="modalIngredients"></div>
+      </div>
+      <div class="modal-section">
+        <h4>Instructions (Summary)</h4>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.7;" id="modalInstructions"></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" style="flex:1" onclick="swapMeal()">🔄 Swap Meal</button>
+        <button class="btn btn-accent" style="flex:1" onclick="closeModal()">✓ Keep This</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span class="toast-icon">✓</span><span id="toastMsg">Done!</span></div>
+
+<script>
+// ── DATA ──
+const meals = {
+  Mon:{
+    breakfast:{name:"Masala Omelette",emoji:"🍳",time:"10 min",cal:280,color:"breakfast",ing:["Eggs","Onion","Tomato","Green chilli","Coriander"],have:["Eggs","Onion","Tomato"],need:["Green chilli","Coriander"],instructions:"Beat eggs with salt. Sauté onions, tomatoes, chilli. Pour eggs and cook on low heat until set. Fold and serve hot."},
+    lunch:{name:"Dal Tadka & Rice",emoji:"🍛",time:"30 min",cal:420,color:"lunch",ing:["Yellow lentils","Cumin","Ghee","Garlic","Rice","Tomato"],have:["Yellow lentils","Cumin","Ghee","Garlic","Rice"],need:["Tomato"],instructions:"Pressure cook dal. Make tadka with ghee, cumin, garlic. Add tomatoes, mix into dal. Serve over steamed rice."},
+    dinner:{name:"Palak Paneer",emoji:"🥘",time:"35 min",cal:380,color:"dinner",ing:["Spinach","Paneer","Cream","Garam masala","Ginger","Garlic"],have:["Spinach","Paneer","Ginger","Garlic"],need:["Cream","Garam masala"],instructions:"Blanch spinach, blend smooth. Sauté ginger-garlic, add spinach purée. Add paneer cubes, cream, and spices. Simmer 10 min."}
+  },
+  Tue:{
+    breakfast:{name:"Upma",emoji:"🥣",time:"15 min",cal:220,color:"breakfast",ing:["Semolina","Mustard seeds","Curry leaves","Onion","Water"],have:["Semolina","Mustard seeds","Onion"],need:["Curry leaves"],instructions:"Roast semolina. Temper mustard seeds and curry leaves. Add onion, water, and roasted semolina. Cook until fluffy."},
+    lunch:{name:"Greek Salad",emoji:"🥗",time:"10 min",cal:280,color:"lunch",ing:["Cucumber","Tomato","Olives","Feta","Red onion","Olive oil"],have:["Cucumber","Tomato","Red onion"],need:["Olives","Feta","Olive oil"],instructions:"Chop veggies into chunks. Toss with olives, feta, olive oil, oregano, salt and pepper. Serve immediately."},
+    dinner:{name:"Vegetable Biryani",emoji:"🍚",time:"45 min",cal:480,color:"dinner",ing:["Basmati rice","Mixed veggies","Biryani masala","Saffron","Onion"],have:["Basmati rice","Onion"],need:["Mixed veggies","Biryani masala","Saffron"],instructions:"Par-cook rice. Sauté veggies with biryani masala. Layer rice and veggies. Dum cook on low heat 20 min."}
+  },
+  Wed:{
+    breakfast:{name:"Poha",emoji:"🌾",time:"15 min",cal:240,color:"breakfast",ing:["Flattened rice","Peanuts","Onion","Turmeric","Lemon"],have:["Flattened rice","Peanuts","Onion","Turmeric"],need:["Lemon"],instructions:"Rinse poha. Sauté onions, peanuts with mustard seeds. Add poha, turmeric, salt. Cook 5 min. Finish with lemon juice."},
+    lunch:{name:"Rajma Chawal",emoji:"🫘",time:"40 min",cal:450,color:"lunch",ing:["Kidney beans","Tomato","Onion","Rajma masala","Cumin","Rice"],have:["Kidney beans","Onion","Cumin","Rice"],need:["Tomato","Rajma masala"],instructions:"Cook soaked rajma until soft. Make tomato-onion gravy with spices. Add rajma, simmer 15 min. Serve with rice."},
+    dinner:{name:"Mushroom Pasta",emoji:"🍝",time:"25 min",cal:390,color:"dinner",ing:["Pasta","Mushrooms","Garlic","Olive oil","Parmesan","Herbs"],have:["Pasta","Garlic"],need:["Mushrooms","Olive oil","Parmesan","Herbs"],instructions:"Boil pasta. Sauté mushrooms and garlic in olive oil. Toss pasta with mushroom mix, season well, top with parmesan."}
+  },
+  Thu:{
+    breakfast:{name:"Banana Smoothie",emoji:"🍌",time:"5 min",cal:210,color:"breakfast",ing:["Banana","Milk","Honey","Almonds","Oats"],have:["Banana","Milk","Oats"],need:["Honey","Almonds"],instructions:"Blend banana, milk, honey, almonds, and oats until smooth. Pour over ice. Optional: add protein powder."},
+    lunch:{name:"Chole Bhature",emoji:"🫓",time:"45 min",cal:580,color:"lunch",ing:["Chickpeas","Bhature flour","Chole masala","Onion","Tomato"],have:["Chickpeas","Onion"],need:["Bhature flour","Chole masala","Tomato"],instructions:"Prepare chole with spiced tomato-onion gravy. Make bhature dough, rest 2 hours. Deep fry until puffed. Serve together."},
+    dinner:{name:"Stir Fry Noodles",emoji:"🍜",time:"20 min",cal:360,color:"dinner",ing:["Noodles","Soy sauce","Vegetables","Ginger","Sesame oil"],have:["Noodles","Ginger"],need:["Soy sauce","Vegetables","Sesame oil"],instructions:"Boil noodles. Stir fry veggies in sesame oil with ginger. Add noodles and soy sauce. Toss on high heat 3 min."}
+  },
+  Fri:{
+    breakfast:{name:"Paratha & Curd",emoji:"🫓",time:"20 min",cal:340,color:"breakfast",ing:["Wheat flour","Aloo filling","Curd","Butter","Cumin"],have:["Wheat flour","Curd","Butter"],need:["Aloo filling","Cumin"],instructions:"Make paratha dough. Prepare spiced aloo filling. Roll, stuff, and cook on tawa with butter until golden on both sides."},
+    lunch:{name:"Lemon Rice",emoji:"🍋",time:"20 min",cal:310,color:"lunch",ing:["Rice","Lemon","Peanuts","Curry leaves","Turmeric","Mustard"],have:["Rice","Lemon","Peanuts","Turmeric"],need:["Curry leaves","Mustard"],instructions:"Cook rice, cool slightly. Make tempering with mustard, peanuts, curry leaves, turmeric. Mix with lemon juice and rice."},
+    dinner:{name:"Paneer Tikka",emoji:"🧆",time:"30 min",cal:420,color:"dinner",ing:["Paneer","Yogurt","Tikka masala","Capsicum","Onion","Lemon"],have:["Paneer","Yogurt","Onion"],need:["Tikka masala","Capsicum","Lemon"],instructions:"Marinate paneer in spiced yogurt 1 hour. Skewer with veggies. Grill or bake at high heat until charred. Serve with chutney."}
+  },
+  Sat:{
+    breakfast:{name:"Idli Sambar",emoji:"🍡",time:"25 min",cal:260,color:"breakfast",ing:["Idli batter","Sambar","Coconut chutney","Curry leaves","Mustard"],have:["Idli batter"],need:["Sambar","Coconut chutney","Curry leaves","Mustard"],instructions:"Steam idlis in moulds for 10-12 min. Heat sambar, add veggies. Prepare chutney. Serve idlis with hot sambar and chutney."},
+    lunch:{name:"Vegetable Pulao",emoji:"🍚",time:"30 min",cal:360,color:"lunch",ing:["Basmati rice","Mixed vegetables","Whole spices","Ghee","Onion"],have:["Basmati rice","Ghee","Onion"],need:["Mixed vegetables","Whole spices"],instructions:"Sauté whole spices and onion in ghee. Add vegetables, rice, water. Cook until done. Serve with raita."},
+    dinner:{name:"Masala Dosa",emoji:"🥞",time:"35 min",cal:400,color:"dinner",ing:["Dosa batter","Potato filling","Sambar","Chutney","Oil"],have:["Dosa batter"],need:["Potato filling","Sambar","Chutney"],instructions:"Spread batter thin on hot griddle. Add potato masala filling. Fold and serve with fresh sambar and two chutneys."}
+  },
+  Sun:{
+    breakfast:{name:"Pancakes",emoji:"🥞",time:"20 min",cal:320,color:"breakfast",ing:["Flour","Eggs","Milk","Butter","Maple syrup"],have:["Flour","Eggs","Milk","Butter"],need:["Maple syrup"],instructions:"Mix flour, eggs, milk, and melted butter. Cook on non-stick pan on medium heat. Flip when bubbles form. Serve with syrup."},
+    lunch:{name:"Matar Paneer",emoji:"🍲",time:"30 min",cal:400,color:"lunch",ing:["Paneer","Green peas","Tomato","Cream","Onion","Spices"],have:["Paneer","Onion"],need:["Green peas","Tomato","Cream","Spices"],instructions:"Sauté onions until golden. Add tomatoes, spices. Cook 10 min. Add peas and paneer cubes. Simmer in cream sauce 10 min."},
+    dinner:{name:"Kadai Bhindi",emoji:"🫑",time:"25 min",cal:280,color:"dinner",ing:["Okra","Onion","Tomato","Kadai masala","Coriander","Oil"],have:["Onion","Tomato","Oil"],need:["Okra","Kadai masala","Coriander"],instructions:"Fry okra until slightly crisp. Make tomato-onion gravy with kadai masala. Add okra, toss well. Garnish with coriander."}
+  }
+};
+
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const dates = ['24','25','26','27','28','1','2'];
+const today = 'Wed';
+
+// ── RENDER WEEK GRID ──
+function renderWeek(){
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+  days.forEach((day,i)=>{
+    const m = meals[day];
+    grid.innerHTML += `
+    <div class="day-col">
+      <div class="day-head">
+        <div class="day-name">${day}</div>
+        <div class="day-num${day===today?' today':''}">${dates[i]}</div>
+      </div>
+      <div class="meal-slots">
+        ${renderSlot(m.breakfast,day,'breakfast')}
+        ${renderSlot(m.lunch,day,'lunch')}
+        ${renderSlot(m.dinner,day,'dinner')}
+      </div>
+    </div>`;
+  });
+}
+function renderSlot(meal,day,type){
+  if(!meal) return `<div class="meal-slot"><div class="slot-type">${type}</div><div class="slot-empty">+ Add</div></div>`;
+  return `<div class="meal-slot filled ${type}" onclick="openModal('${day}','${type}')">
+    <div class="slot-type">${type}</div>
+    <div class="slot-name">${meal.emoji} ${meal.name}</div>
+    <div class="slot-time">⏱ ${meal.time}</div>
+  </div>`;
+}
+
+// ── MODAL ──
+let currentDay='',currentType='';
+function openModal(day,type){
+  currentDay=day; currentType=type;
+  const m=meals[day][type];
+  document.getElementById('modalEmoji').innerHTML=`<span style="font-size:5rem">${m.emoji}</span><div class="modal-badge">${m.time}</div>`;
+  document.getElementById('modalTitle').textContent=m.name;
+  document.getElementById('modalTime').textContent=m.time;
+  document.getElementById('modalCal').textContent=m.cal;
+  document.getElementById('modalInstructions').textContent=m.instructions;
+  const ingDiv=document.getElementById('modalIngredients');
+  ingDiv.innerHTML=m.ing.map(i=>`<span class="ing-chip${m.have.includes(i)?' have':' need'}">${m.have.includes(i)?'✓':'+'} ${i}</span>`).join('');
+  document.getElementById('mealModal').classList.add('open');
+}
+function closeModal(){document.getElementById('mealModal').classList.remove('open');}
+function swapMeal(){
+  showToast('Meal swapped! 🔄 Shopping list updated.');
+  closeModal();
+}
+
+// ── PANTRY ──
+let pantryItems=[
+  {name:'Basmati Rice',cat:'🌾'},{name:'Yellow Lentils',cat:'🫙'},{name:'Onion',cat:'🥬'},
+  {name:'Tomato',cat:'🥬'},{name:'Spinach',cat:'🥬'},{name:'Paneer',cat:'🧀'},
+  {name:'Eggs',cat:'🧀'},{name:'Curd',cat:'🧀'},{name:'Ghee',cat:'🧀'},
+  {name:'Wheat Flour',cat:'🌾'},{name:'Semolina',cat:'🌾'},{name:'Cumin',cat:'🌶️'},
+  {name:'Turmeric',cat:'🌶️'},{name:'Ginger',cat:'🌶️'}
+];
+function renderPantry(){
+  const list=document.getElementById('pantryList');
+  list.innerHTML=pantryItems.length?pantryItems.map((item,i)=>`
+    <div class="pantry-item">
+      <div class="item-left"><span>${item.cat}</span>${item.name}</div>
+      <button class="del-btn" onclick="removePantry(${i})">✕</button>
+    </div>`).join(''):'<div class="empty-state">No pantry items. Add some above!</div>';
+  document.getElementById('totalItems').textContent=pantryItems.length;
+  renderStockBars();
+}
+function removePantry(i){pantryItems.splice(i,1);renderPantry();showToast('Item removed 🗑️');}
+function addPantryItem(){
+  const input=document.getElementById('pantryInput');
+  const cat=document.getElementById('pantryCat').value;
+  const name=input.value.trim();
+  if(!name)return;
+  pantryItems.unshift({name,cat});
+  input.value='';renderPantry();showToast(`${cat} ${name} added!`);
+}
+function renderStockBars(){
+  const cats=[{label:'🌾 Grains',pct:85},{label:'🥬 Veggies',pct:60},{label:'🧀 Dairy',pct:70},{label:'🌶️ Spices',pct:90}];
+  document.getElementById('stockBars').innerHTML=cats.map(c=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:.3rem"><span>${c.label}</span><span>${c.pct}%</span></div>
+      <div class="progress-bar" style="margin-bottom:0;"><div class="progress-fill" style="width:${c.pct}%"></div></div>
+    </div>`).join('');
+}
+
+// ── SHOPPING LIST ──
+const shopItems=[
+  {cat:'🥬 Vegetables',items:[{name:'Green Chilli',qty:'100g'},{name:'Curry Leaves',qty:'1 bunch'},{name:'Mixed Vegetables',qty:'500g'},{name:'Okra / Bhindi',qty:'300g'}]},
+  {cat:'🧀 Dairy & Protein',items:[{name:'Cream',qty:'200ml'},{name:'Feta Cheese',qty:'150g'}]},
+  {cat:'🫙 Pantry Staples',items:[{name:'Rajma Masala',qty:'50g'},{name:'Biryani Masala',qty:'30g'},{name:'Soy Sauce',qty:'1 bottle'},{name:'Olive Oil',qty:'250ml'}]},
+  {cat:'🍋 Produce',items:[{name:'Lemon',qty:'4 pcs'},{name:'Maple Syrup',qty:'1 bottle'}]}
+];
+let shopChecked=new Set();
+function renderShopList(){
+  const container=document.getElementById('shopList');
+  container.innerHTML=shopItems.map(sec=>`
+    <div class="shop-section">
+      <div class="shop-section-title">${sec.cat}</div>
+      ${sec.items.map((item,i)=>{
+        const key=sec.cat+item.name;
+        const checked=shopChecked.has(key);
+        return `<div class="shop-item">
+          <div class="shop-cb${checked?' checked':''}" onclick="toggleShop('${key}',this)"></div>
+          <span class="shop-name${checked?' done':''}">${item.name}</span>
+          <span class="shop-qty">${item.qty}</span>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+  updateShopProgress();
+}
+function toggleShop(key,el){
+  if(shopChecked.has(key)){shopChecked.delete(key);}else{shopChecked.add(key);}
+  renderShopList();
+}
+function updateShopProgress(){
+  const total=shopItems.reduce((a,s)=>a+s.items.length,0);
+  const pct=Math.round(shopChecked.size/total*100);
+  document.getElementById('shopProgress').textContent=`${shopChecked.size} of ${total} checked`;
+  document.getElementById('shopProgressBar').style.width=pct+'%';
+}
+function checkAll(){
+  shopItems.forEach(sec=>sec.items.forEach(item=>shopChecked.add(sec.cat+item.name)));
+  renderShopList();showToast('All items checked! 🛒');
+}
+function exportList(){showToast('Shopping list exported as PDF! 📄');}
+
+// ── PREFERENCES ──
+const cuisines=['Indian','Italian','Mediterranean','Mexican','Chinese','Thai','Japanese','Middle Eastern','American','French'];
+const allergens=['Gluten','Dairy','Nuts','Eggs','Soy','Shellfish','Sesame'];
+let activeCuisines=new Set(['Indian','Mediterranean']);
+let activeAllergens=new Set();
+let dislikedItems=['Bitter Gourd'];
+
+function renderPreferences(){
+  document.getElementById('cuisineGrid').innerHTML=cuisines.map(c=>`
+    <button class="cuisine-btn${activeCuisines.has(c)?' active':''}" onclick="toggleCuisine('${c}')">${c}</button>`).join('');
+  document.getElementById('allergenGrid').innerHTML=allergens.map(a=>`
+    <button class="cuisine-btn${activeAllergens.has(a)?' active':''}" onclick="toggleAllergen('${a}')">${a}</button>`).join('');
+  renderDislikedList();
+}
+function toggleCuisine(c){
+  activeCuisines.has(c)?activeCuisines.delete(c):activeCuisines.add(c);
+  renderPreferences();showToast(`${c} ${activeCuisines.has(c)?'added':'removed'}`);
+}
+function toggleAllergen(a){
+  activeAllergens.has(a)?activeAllergens.delete(a):activeAllergens.add(a);
+  renderPreferences();showToast(`${a} allergen ${activeAllergens.has(a)?'added':'removed'}`);
+}
+function addDislike(){
+  const val=document.getElementById('dislikeInput').value.trim();
+  if(!val)return;
+  dislikedItems.push(val);
+  document.getElementById('dislikeInput').value='';
+  renderDislikedList();showToast(`${val} added to dislikes`);
+}
+function renderDislikedList(){
+  document.getElementById('dislikeList').innerHTML=dislikedItems.map((d,i)=>`
+    <span class="ing-chip" style="cursor:pointer" onclick="removeDislike(${i})">✕ ${d}</span>`).join('');
+}
+function removeDislike(i){dislikedItems.splice(i,1);renderDislikedList();showToast('Removed!');}
+function updateTimeLabel(v){document.getElementById('timeVal').textContent=v+' min';}
+function savePrefs(){showToast('Preferences saved! ✨ Regenerating plan...');}
+
+// ── GENERATE ──
+function generatePlan(){
+  showToast('✨ Generating your personalized plan...');
+  setTimeout(()=>{showToast('Plan ready! 🎉 Check your dashboard.');goPage('dashboard');},1800);
+}
+
+// ── NAVIGATION ──
+const pageTitles={
+  dashboard:'Dashboard',generate:'Generate Plan',
+  pantry:'Pantry Manager',shopping:'Shopping List',
+  preferences:'Preferences',docs:'Assignment Docs (Parts 1–4)'
+};
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelector(`[onclick="goPage('${id}')"]`).classList.add('active');
+  document.getElementById('pageTitle').innerHTML=pageTitles[id]+(id==='dashboard'?'<span>Feb 24 – Mar 2, 2026</span>':'');
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg){
+  clearTimeout(toastTimer);
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.classList.add('show');
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── INIT ──
+renderWeek();
+renderPantry();
+renderShopList();
+renderPreferences();
+</script>
+</body>
+</html>
