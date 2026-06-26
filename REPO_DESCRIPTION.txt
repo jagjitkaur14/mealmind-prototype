@@ -1,0 +1,1 @@
+A smart meal-planning prototype that generates weekly meal plans using user preferences, pantry inventory, cooking time, and an auto-created shopping list.
